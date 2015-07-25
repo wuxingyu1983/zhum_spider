@@ -1,0 +1,23 @@
+{
+  "name": "zhum_spider",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wuxingyu1983/zhum_spider.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wuxingyu1983/zhum_spider/issues"
+  },
+  "homepage": "https://github.com/wuxingyu1983/zhum_spider#readme",
+  "dependencies": {
+    "formidable": "^1.0.17"
+  }
+}
