@@ -3,7 +3,9 @@
  */
 
 var querystring = require("querystring"),
-    formidable = require("formidable")
+    formidable = require("formidable"),
+    html_downloader = require("./htmlDownloader"),
+    parser = require("./parser"),
     fs = require("fs");
 
 function start(response, request) {
@@ -75,6 +77,8 @@ function scan(response, request) {
         var params = querystring.parse(postData);
 
         console.log("the url is " + params['url']);
+
+        html_downloader.download(params['url'], parser.parseAlbum);
 
         response.writeHead(200, {"Content-Type": "text/html"});
         response.write("the url is " + params['url']);
