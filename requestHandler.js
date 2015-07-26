@@ -15,10 +15,10 @@ function start(response, request) {
         'content="text/html; charset=UTF-8" />'+
         '</head>'+
         '<body>'+
-        '<form action="/upload" enctype="multipart/form-data" '+
+        '<form action="/scan"'+
         'method="post">'+
-        '<input type="file" name="upload">'+
-        '<input type="submit" value="Upload file" />'+
+        '<input type="input" name="url">'+
+        '<input type="submit" value="Scan" />'+
         '</form>'+
         '</body>'+
         '</html>';
@@ -58,6 +58,31 @@ function show(response, request) {
     });
 }
 
+function scan(response, request) {
+    var postData = "";
+
+    request.setEncoding("utf8");
+
+    request.addListener("data", function(postDataChunk) {
+        postData += postDataChunk;
+        console.log("Received POST data chunk '"+
+            postDataChunk + "'.");
+    });
+
+    request.addListener("end", function() {
+        console.log("the post data is " + postData);
+
+        var params = querystring.parse(postData);
+
+        console.log("the url is " + params['url']);
+
+        response.writeHead(200, {"Content-Type": "text/html"});
+        response.write("the url is " + params['url']);
+        response.end();
+    });
+}
+
 exports.start = start;
 exports.upload = upload;
 exports.show = show;
+exports.scan = scan;

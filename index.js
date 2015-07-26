@@ -11,5 +11,6 @@ handle["/"] = requstHandler.start;
 handle["/start"] = requstHandler.start;
 handle["/upload"] = requstHandler.upload;
 handle["/show"] = requstHandler.show;
+handle["/scan"] = requstHandler.scan;
 
 server.start(router.route, handle);
