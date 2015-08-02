@@ -40,21 +40,37 @@ function parseHome(html, prefix, db) {
     var $ = cheerio.load(html);
 
     // 遍历本页的 album
+    var albums = [];
+
     $("#tiles li").each(function(i,v){
         var album_url = prefix + $(v).find("a").attr("href");
         var album_name = $(v).find("img").attr("alt");
-        console.log(i + ": the Album name is " + album_name + " url is " + album_url);
 
-        database.saveAlbum(album_name, album_url, db);
+        var album_obj = new Object();
+        album_obj.name = album_name;
+        album_obj.url = album_url;
 
-//        html_downloader.download(album_url, parseAlbum);
+        albums.push(album_obj);
     });
+
+    var nxt_url = null;
 
     // 是否还有下一页
     $(".nxt").each(function(i, v){
-        var nxt_url = prefix + $(v).attr("href");
-        console.log("the next page is " + nxt_url);
-        html_downloader.download(nxt_url, parseHome, db);
+        nxt_url = prefix + $(v).attr("href");
+    });
+
+    database.saveAlbum(albums, db, function(){
+        // albums 中的已经处理完了
+        if (nxt_url) {
+            // 还有下一页
+            console.log("the next page is " + nxt_url);
+            html_downloader.download(nxt_url, parseHome, db);
+        }
+        else {
+            // 全部处理完了
+            console.log("Finished !!");
+        }
     });
 }
 
