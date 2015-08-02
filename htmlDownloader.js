@@ -7,7 +7,7 @@ var http = require("http"),
     iconv = require("iconv-lite"),
     BufferHelper = require('bufferhelper');
 
-function download(url, parserFunc) {
+function download(url, parserFunc, db) {
     var url_obj = urlm.parse(url);
     var prefix = url_obj.protocol + "//" + url_obj.host + "/";
     http.get(url, function(res) {
@@ -20,7 +20,7 @@ function download(url, parserFunc) {
 
 //            console.log("the html is " + html);
 
-            parserFunc(html, prefix);
+            parserFunc(html, prefix, db);
         });
     }).on('error', function(e) {
         console.log("Got error: " + e.message);
