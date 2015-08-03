@@ -63,7 +63,7 @@ function parseHome(url, db, callback) {
             nxt_url = prefix + $(v).attr("href");
         });
 
-        database.saveAlbum(albums, db, function(){
+        processAlbums(albums, db, function(){
             // albums 中的已经处理完了
             if (nxt_url) {
                 // 还有下一页
@@ -76,6 +76,21 @@ function parseHome(url, db, callback) {
             }
         });
     });
+}
+
+function processAlbums(albums, db, callback) {
+    if (0 < albums.length) {
+        var obj = albums.shift();
+
+        database.saveAlbum(obj, db, function() {
+            // 存储后
+
+            processAlbums(albums, db, callback);
+        });
+    }
+    else {
+        callback();
+    }
 }
 
 exports.parseHome = parseHome;
