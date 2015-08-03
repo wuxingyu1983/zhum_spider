@@ -4,7 +4,6 @@
 
 var querystring = require("querystring"),
     formidable = require("formidable"),
-    html_downloader = require("./htmlDownloader"),
     parser = require("./parser"),
     fs = require("fs"),
     mongoClient = require('mongodb').MongoClient;
@@ -81,7 +80,9 @@ function scan(response, request) {
 
         mongoClient.connect('mongodb://localhost:27017/zhum_spider', function (err, db) {
             if (db) {
-                html_downloader.download(params['url'], parser.parseHome, db);
+                parser.parseHome(params['url'], db, function() {
+                    console.log("Finished !!");
+                });
             }
             else {
                 console.log("connect db error !!");

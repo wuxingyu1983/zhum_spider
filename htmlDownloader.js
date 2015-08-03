@@ -3,13 +3,10 @@
  */
 
 var http = require("http"),
-    urlm = require("url"),
     iconv = require("iconv-lite"),
     BufferHelper = require('bufferhelper');
 
-function download(url, parserFunc, db) {
-    var url_obj = urlm.parse(url);
-    var prefix = url_obj.protocol + "//" + url_obj.host + "/";
+function download(url, callback) {
     http.get(url, function(res) {
         var bufferHelper = new BufferHelper();
         res.on('data', function(chunk){
@@ -17,10 +14,7 @@ function download(url, parserFunc, db) {
         });
         res.on('end', function(){
             var html = iconv.decode(bufferHelper.toBuffer(), 'gbk');
-
-//            console.log("the html is " + html);
-
-            parserFunc(html, prefix, db);
+            callback(html);
         });
     }).on('error', function(e) {
         console.log("Got error: " + e.message);
