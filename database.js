@@ -45,5 +45,28 @@ function saveImage(obj, db, callback) {
     });
 }
 
+function getImages(db, callback) {
+    var collection = db.collection('image');
+
+    collection.find({download:0}).toArray(function(err, docs) {
+        if (err) {
+            callback(null);
+        }
+        else {
+            callback(docs);
+        }
+    });
+}
+
+function imageSaved(obj, db, callback) {
+    var collection = db.collection('image');
+
+    collection.updateOne({ablum: obj.ablum, url: obj.url}, {$set:{download:1}});
+
+    callback();
+}
+
 exports.saveAlbum = saveAlbum;
 exports.saveImage = saveImage;
+exports.getImages = getImages;
+exports.imageSaved = imageSaved;
