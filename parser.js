@@ -6,32 +6,60 @@ var database = require("./database");
 var html_downloader = require("./htmlDownloader");
 var urlm = require("url");
 // 处理照片详情页
-function parseDetail(html, prefix, db) {
-    var $ = cheerio.load(html);
+function parseDetail(obj, db, callback) {
+    var url = obj.url;
+    html_downloader.download(url, function(html){
+        var url_obj = urlm.parse(url);
+        var prefix = url_obj.protocol + "//" + url_obj.host + "/";
+        var $ = cheerio.load(html);
 
-    // 照片的地址
-    $("#photo_pic > a > img").each(function(i, v){
-        var image_url = prefix + $(v).attr("src");
-        console.log("the Image url is " + image_url);
+        // 照片的地址
+        var image_url = null;
+        $("#photo_pic > a > img").each(function(i, v){
+            image_url = prefix + $(v).attr("src");
+//            console.log("the Image url is " + image_url);
+        });
+
+        callback(image_url);
     });
 }
 
 // 处理相册、下一页
-function parseAlbum(html, prefix, db) {
-    var $ = cheerio.load(html);
+function parseAlbum(obj, db, callback) {
+    var url = obj.url;
+    var ablum_name = obj.name;
+    html_downloader.download(url, function(html){
+        var url_obj = urlm.parse(url);
+        var prefix = url_obj.protocol + "//" + url_obj.host + "/";
+        var $ = cheerio.load(html);
 
-    // 遍历照片详情
-    $("#tiles li").each(function(i,v){
-        var detail_url = prefix + $(v).find("a").attr("href");
-        console.log(i + ": the Detail url is " + detail_url);
-        html_downloader.download(detail_url, parseDetail);
-    });
+        // 遍历照片详情
+        var details = [];
+        $("#tiles li").each(function(i,v){
+            var detail_url = prefix + $(v).find("img").attr("src");
+            var processed_url = detail_url.substring(0, detail_url.lastIndexOf(".thumb.jpg"));
+//            console.log(i + ": the Detail url is " + detail_url);
+            details.push({url:processed_url, name:ablum_name});
+//            html_downloader.download(detail_url, parseDetail);
+        });
 
-    // 是否还有下一页
-    $(".nxt").each(function(i, v){
-        var nxt_url = prefix + $(v).attr("href");
-        console.log("the next page is " + nxt_url);
-        html_downloader.download(nxt_url, parseAlbum);
+        // 是否还有下一页
+        var nxt_url = null;
+        $(".nxt").each(function(i, v){
+            nxt_url = prefix + $(v).attr("href");
+        });
+
+        processDetails(details, db, function(){
+            if (nxt_url) {
+                // 还有下一页
+                console.log("the next page is " + nxt_url);
+                parseAlbum({url:nxt_url, name:ablum_name}, db, callback);
+            }
+            else {
+                // 全部处理完了
+                callback();
+            }
+        });
     });
 }
 
@@ -84,9 +112,30 @@ function processAlbums(albums, db, callback) {
 
         database.saveAlbum(obj, db, function() {
             // 存储后
-
-            processAlbums(albums, db, callback);
+//            processAlbums(albums, db, callback);
+            parseAlbum(obj, db, function(){
+                processAlbums(albums, db, callback);
+            });
         });
+    }
+    else {
+        callback();
+    }
+}
+
+function processDetails(details, db, callback) {
+    if (0 < details.length) {
+        var obj = details.shift();
+        database.saveImage({album:obj.name, url:obj.url}, db, function(){
+            processDetails(details, db, callback);
+        });
+        /*
+         parseDetail(obj, db, function(img_url){
+         database.saveImage({album:obj.name, url:img_url}, db, function(){
+         processDetails(details, db, callback);
+         });
+         });
+         */
     }
     else {
         callback();
