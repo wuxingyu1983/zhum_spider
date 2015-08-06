@@ -5,6 +5,21 @@
 var database = require("./database");
 var fs = require("fs");
 var http = require("http");
+var async = require("async");
+
+function reduce(db) {
+    database.getImages(db, function(images) {
+        if (images) {
+            downloadImage(images, db, function() {
+                console.log("download finished!!");
+            });
+        }
+        else {
+            console.log("download query error")
+        }
+    });
+}
+
 
 function download(db) {
     database.getImages(db, function(images) {
@@ -28,32 +43,21 @@ function downloadImage(images, db, callback) {
 
         // 先判断目录是否已经建立
         var path = "./download/" + obj.ablum;
-
+        obj.path = path;
         fs.exists(path, function (exists) {
             if (exists) {
-                http.get(obj.url, function(res){
-                    if (res.statusCode == 200) {
-                        var writestream = fs.createWriteStream(path + "/" + Math.floor(Math.random()*100000) + obj.url.substr(-4,4));
-                        res.pipe(writestream);
-                        writestream.on('finish', function(){
-                            // 记录已经下载过了
-                            database.imageSaved(obj, db, function(){
-                                downloadImage(images, db, callback);
-                            });
-                        });
-                        writestream.on('error', function(){
-                            console.log("writestream error");
-                            downloadImage(images, db, callback);
-                        });
+                q.push(obj, function(err) {
+                    if (err) {
+                        console.log(err);
                     }
                     else {
-                        console.log("statusCode: " + res.statusCode);
-                        downloadImage(images, db, callback);
+                        // 记录已经下载过了
+                        database.imageSaved(obj, db, function(){
+                            console.log(obj.path + " downloaded !!");
+                        });
                     }
-                }).on('error', function(e) {
-                    console.log("Got error: " + e.message);
-                    downloadImage(images, db, callback);
                 });
+                downloadImage(images, db, callback);
             }
             else {
                 fs.mkdir(path, 0777, function (err) {
@@ -61,28 +65,18 @@ function downloadImage(images, db, callback) {
                         downloadImage(images, db, callback);
                     }
                     else {
-                        http.get(obj.url, function(res){
-                            if (res.statusCode == 200) {
-                                var writestream = fs.createWriteStream(path + "/" + Math.floor(Math.random()*100000) + obj.url.substr(-4,4));
-                                res.pipe(writestream);
-                                writestream.on('finish', function(){
-                                    // 记录已经下载过了
-                                    database.imageSaved(obj, db, function(){
-                                        downloadImage(images, db, callback);
-                                    });
-                                });
-                                writestream.on('error', function(){
-                                    console.log("writestream error");
+                        q.push(obj, function(err) {
+                            if (err) {
+                                console.log(err);
+                                downloadImage(images, db, callback);
+                            }
+                            else {
+                                // 记录已经下载过了
+                                console.log(obj.path + " downloaded !!");
+                                database.imageSaved(obj, db, function(){
                                     downloadImage(images, db, callback);
                                 });
                             }
-                            else {
-                                console.log("statusCode: " + res.statusCode);
-                                downloadImage(images, db, callback);
-                            }
-                        }).on('error', function(e) {
-                            console.log("Got error: " + e.message);
-                            downloadImage(images, db, callback);
                         });
                     }
                 });
@@ -91,4 +85,29 @@ function downloadImage(images, db, callback) {
     }
 }
 
+var q = async.queue(function(obj, callback){
+    var url = obj.url;
+    if (0 <= url.indexOf("http://www.zhuamei5.com/http://img.zhuamei.net")) {
+        url = url.substring("http://www.zhuamei5.com/".length, url.length);
+    }
+    http.get(url, function(res){
+        if (res.statusCode == 200) {
+            var writestream = fs.createWriteStream(obj.path + "/" + Math.floor(Math.random()*100000) + url.substr(-4,4));
+            res.pipe(writestream);
+            writestream.on('finish', function(){
+                callback(null);
+            });
+            writestream.on('error', function(){
+                callback("writestream error");
+            });
+        }
+        else {
+            callback("statusCode: " + res.statusCode + " url is " + obj.url);
+        }
+    }).on('error', function(e) {
+        callback("Got error: " + e.message);
+    });
+}, 20);
+
 exports.download = download;
+exports.reduce = reduce;

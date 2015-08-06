@@ -36,7 +36,12 @@ function parseAlbum(obj, db, callback) {
         // 遍历照片详情
         var details = [];
         $("#tiles li").each(function(i,v){
-            var detail_url = prefix + $(v).find("img").attr("src");
+            var image_src = $(v).find("img").attr("src");
+            var detail_url = image_src;
+            if (0 > image_src.indexOf("http:")) {
+                // 不是以 http 开头的
+                detail_url = prefix + detail_url;
+            }
             var processed_url = detail_url.substring(0, detail_url.lastIndexOf(".thumb.jpg"));
 //            console.log(i + ": the Detail url is " + detail_url);
             details.push({url:processed_url, name:ablum_name});
