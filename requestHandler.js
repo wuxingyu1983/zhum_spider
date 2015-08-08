@@ -111,24 +111,8 @@ function download(response, request) {
     response.end();
 }
 
-function reduce(response, request) {
-    mongoClient.connect('mongodb://localhost:27017/zhum_spider', function (err, db) {
-        if (db) {
-            imageDownloader.download(db);
-        }
-        else {
-            console.log("connect db error !!");
-        }
-    });
-
-    response.writeHead(200, {"Content-Type": "text/html"});
-    response.write("start !");
-    response.end();
-}
-
 exports.start = start;
 exports.upload = upload;
 exports.show = show;
 exports.scan = scan;
 exports.download = download;
-exports.reduce = reduce;

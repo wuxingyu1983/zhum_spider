@@ -7,20 +7,6 @@ var fs = require("fs");
 var http = require("http");
 var async = require("async");
 
-function reduce(db) {
-    database.getImages(db, function(images) {
-        if (images) {
-            downloadImage(images, db, function() {
-                console.log("download finished!!");
-            });
-        }
-        else {
-            console.log("download query error")
-        }
-    });
-}
-
-
 function download(db) {
     database.getImages(db, function(images) {
         if (images) {
@@ -92,13 +78,37 @@ var q = async.queue(function(obj, callback){
     }
     http.get(url, function(res){
         if (res.statusCode == 200) {
-            var writestream = fs.createWriteStream(obj.path + "/" + Math.floor(Math.random()*100000) + url.substr(-4,4));
+            var save_path = obj.path + "/" + Math.floor(Math.random()*100000) + url.substr(-4,4);
+            var writestream = fs.createWriteStream(save_path);
+
+            var finished = 0;
+            var timeout = 0;
+
+            var timer = setTimeout(function() {
+                // 60 秒超时
+                if (0 == finished) {
+                    timeout = 1;
+                    writestream.end();
+                    fs.unlinkSync(save_path);
+                    callback("writestream time out");
+                }
+            }, 1000 * 60 * 5);
+
             res.pipe(writestream);
             writestream.on('finish', function(){
-                callback(null);
+                if (0 == timeout) {
+                    finished = 1;
+                    clearTimeout(timer);
+                    callback(null);
+                }
             });
             writestream.on('error', function(){
-                callback("writestream error");
+                if (0 == timeout) {
+                    finished = 1;
+                    fs.unlinkSync(save_path);
+                    clearTimeout(timer);
+                    callback("writestream error");
+                }
             });
         }
         else {
@@ -107,7 +117,6 @@ var q = async.queue(function(obj, callback){
     }).on('error', function(e) {
         callback("Got error: " + e.message);
     });
-}, 20);
+}, 25);
 
 exports.download = download;
-exports.reduce = reduce;
