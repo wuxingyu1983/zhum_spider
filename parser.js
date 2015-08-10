@@ -115,12 +115,19 @@ function processAlbums(albums, db, callback) {
     if (0 < albums.length) {
         var obj = albums.shift();
 
-        database.saveAlbum(obj, db, function() {
+        database.saveAlbum(obj, db, function(need_proc) {
             // 存储后
-//            processAlbums(albums, db, callback);
-            parseAlbum(obj, db, function(){
+            if (need_proc) {
+                parseAlbum(obj, db, function () {
+                    database.saveAlbumDownloaded(obj, db, function() {
+                        console.log("add ablum " + obj.name);
+                        processAlbums(albums, db, callback);
+                    });
+                });
+            }
+            else {
                 processAlbums(albums, db, callback);
-            });
+            }
         });
     }
     else {

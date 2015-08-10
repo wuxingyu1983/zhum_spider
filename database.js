@@ -7,20 +7,29 @@ function saveAlbum(obj, db, callback) {
 
     collection.findOne({name: obj.name, url: obj.url}, {limit: 1}, function (err, result) {
         if (null == result) {
-            collection.insertOne({name: obj.name, url: obj.url}, null, function (err, result) {
+            // download = 0，还未下载
+            collection.insertOne({name: obj.name, url: obj.url, download:0}, null, function (err, result) {
                 if (err) {
                     console.log("insert data error!!");
                 }
                 else {
                     console.log("save ablum name is " + obj.name + " url is " + obj.url);
                 }
-                callback();
+                callback(1);
             });
         }
         else {
-            callback();
+            // 已经存在
+            callback(!result.download);
         }
     });
+}
+
+function saveAlbumDownloaded(obj, db, callback) {
+    var collection = db.collection('album');
+
+    collection.updateOne({name: obj.name, url: obj.url}, {$set:{download:1}});
+    callback();
 }
 
 function saveImage(obj, db, callback) {
@@ -67,6 +76,7 @@ function imageSaved(obj, db, callback) {
 }
 
 exports.saveAlbum = saveAlbum;
+exports.saveAlbumDownloaded = saveAlbumDownloaded;
 exports.saveImage = saveImage;
 exports.getImages = getImages;
 exports.imageSaved = imageSaved;
